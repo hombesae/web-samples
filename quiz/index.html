@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>クイズゲーム</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px;
+      color: #fff;
+    }
+
+    .back-link {
+      align-self: flex-start;
+      margin-bottom: 20px;
+      text-decoration: none;
+      color: #a0aec0;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.2s;
+      max-width: 520px;
+      width: 100%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .back-link:hover { color: #fff; }
+
+    .container {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 24px;
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 520px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+
+    /* ヘッダー：問題番号・スコア */
+    .quiz-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      font-size: 0.9rem;
+      color: #a0aec0;
+    }
+
+    /* プログレスバー */
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 6px;
+      margin-bottom: 32px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #f6ad55, #e94560);
+      border-radius: 6px;
+      transition: width 0.4s ease;
+    }
+
+    /* 問題文 */
+    .question {
+      font-size: 1.25rem;
+      font-weight: 600;
+      line-height: 1.6;
+      margin-bottom: 28px;
+      color: #fff;
+      min-height: 60px;
+    }
+
+    /* 選択肢 */
+    .choices {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .choice-btn {
+      text-align: left;
+      padding: 14px 20px;
+      background: rgba(255,255,255,0.05);
+      border: 2px solid rgba(255,255,255,0.12);
+      border-radius: 14px;
+      color: #e2e8f0;
+      font-size: 0.98rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      line-height: 1.4;
+    }
+
+    .choice-btn:hover:not(:disabled) {
+      background: rgba(255,255,255,0.12);
+      border-color: #f6ad55;
+      transform: translateX(4px);
+    }
+
+    /* 正解 */
+    .choice-btn.correct {
+      background: rgba(104, 211, 145, 0.2);
+      border-color: #68d391;
+      color: #68d391;
+    }
+
+    /* 不正解 */
+    .choice-btn.wrong {
+      background: rgba(233, 69, 96, 0.2);
+      border-color: #e94560;
+      color: #fc8181;
+    }
+
+    /* 解説 */
+    .explanation {
+      background: rgba(246, 173, 85, 0.1);
+      border-left: 4px solid #f6ad55;
+      border-radius: 0 12px 12px 0;
+      padding: 14px 16px;
+      font-size: 0.9rem;
+      color: #fbd38d;
+      line-height: 1.7;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .explanation.show { display: block; animation: fadeIn 0.3s ease; }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* 次へボタン */
+    .next-btn {
+      width: 100%;
+      padding: 14px;
+      background: #f6ad55;
+      color: #1a1a2e;
+      border: none;
+      border-radius: 14px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: none;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .next-btn.show { display: block; animation: fadeIn 0.3s ease; }
+    .next-btn:hover { background: #ed8936; }
+    .next-btn:active { transform: scale(0.98); }
+
+    /* 結果画面 */
+    .result-screen {
+      text-align: center;
+      display: none;
+    }
+
+    .result-screen.show { display: block; animation: fadeIn 0.5s ease; }
+
+    .result-emoji { font-size: 5rem; margin-bottom: 16px; }
+    .result-title { font-size: 1.8rem; font-weight: 700; margin-bottom: 8px; }
+    .result-score { font-size: 1.1rem; color: #a0aec0; margin-bottom: 28px; }
+    .score-big { font-size: 3rem; font-weight: 800; color: #f6ad55; }
+
+    .result-bars { text-align: left; margin-bottom: 28px; }
+    .result-bar-item { margin-bottom: 12px; font-size: 0.85rem; color: #a0aec0; }
+    .result-bar-item span { color: #fff; font-weight: 600; }
+    .bar-track {
+      height: 8px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+      margin-top: 4px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #f6ad55, #e94560);
+      border-radius: 8px;
+      transition: width 1s ease;
+    }
+
+    .retry-btn {
+      padding: 14px 40px;
+      background: #f6ad55;
+      color: #1a1a2e;
+      border: none;
+      border-radius: 14px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .retry-btn:hover { background: #ed8936; }
+
+    /* 学習ポイント */
+    .learn-box {
+      margin-top: 28px;
+      background: rgba(246, 173, 85, 0.1);
+      border-left: 4px solid #f6ad55;
+      border-radius: 0 12px 12px 0;
+      padding: 14px 16px;
+      font-size: 0.85rem;
+      color: #fbd38d;
+      line-height: 1.7;
+    }
+    .learn-box strong { display: block; margin-bottom: 6px; color: #f6ad55; }
+  </style>
+</head>
+<body>
+
+  <a class="back-link" href="../index.html">← サンプル一覧に戻る</a>
+
+  <div class="container">
+
+    <!-- クイズ画面 -->
+    <div id="quiz-screen">
+      <div class="quiz-header">
+        <span id="question-num">問題 1 / 8</span>
+        <span id="score-display">スコア: 0</span>
+      </div>
+
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+      </div>
+
+      <p class="question" id="question-text"></p>
+
+      <div class="choices" id="choices"></div>
+
+      <div class="explanation" id="explanation"></div>
+
+      <button class="next-btn" id="next-btn">次の問題へ →</button>
+    </div>
+
+    <!-- 結果画面（最初は非表示） -->
+    <div class="result-screen" id="result-screen">
+      <div class="result-emoji" id="result-emoji">🏆</div>
+      <p class="result-title" id="result-title">お疲れさま！</p>
+      <p class="result-score">
+        <span class="score-big" id="score-big">0</span> / 8 問正解
+      </p>
+      <div class="result-bars" id="result-bars"></div>
+      <button class="retry-btn" id="retry-btn">もう一度挑戦</button>
+    </div>
+
+    <!-- 学習ポイント -->
+    <div class="learn-box">
+      <strong>📚 このアプリで学べること</strong>
+      ・配列（<code>[]</code>）にオブジェクト（<code>{}</code>）を格納してデータ管理<br>
+      ・<code>Math.random()</code> と <code>sort()</code> で配列をシャッフル<br>
+      ・<code>if / else</code> による条件分岐でスコアを計算<br>
+      ・関数を使ってコードを整理する（関数の役割分担）
+    </div>
+  </div>
+
+  <script>
+    // ============================================================
+    //  【学習ポイント①】データを配列+オブジェクトで管理
+    //  各問題は { question, choices, answer, explanation } を持つオブジェクト
+    // ============================================================
+    const questions = [
+      {
+        question: 'HTMLで見出しを表すタグはどれ？',
+        choices: ['<head>', '<h1>', '<header>', '<title>'],
+        answer: '<h1>',
+        explanation: '<h1>〜<h6> が見出しタグです。数字が小さいほど大きな見出しになります。<head> はメタ情報を入れるタグ、<title> はタブに表示されるタイトルです。'
+      },
+      {
+        question: 'CSSで文字色を変えるプロパティは？',
+        choices: ['font-color', 'text-color', 'color', 'foreground'],
+        answer: 'color',
+        explanation: '文字色は color プロパティで指定します。例: color: red; または color: #ff0000;'
+      },
+      {
+        question: 'JavaScriptで変数を宣言するキーワードとして適切でないのは？',
+        choices: ['let', 'const', 'var', 'int'],
+        answer: 'int',
+        explanation: 'JavaScriptには int 型の宣言はありません。let（再代入可）、const（再代入不可）、var（古い書き方）が使えます。'
+      },
+      {
+        question: 'Webブラウザで開発者ツールを開くショートカットキーは？',
+        choices: ['Ctrl+S', 'F12', 'Ctrl+P', 'Alt+F4'],
+        answer: 'F12',
+        explanation: 'F12（またはCmd+Option+I）で開発者ツールが開きます。HTML/CSS/JSのデバッグに必須のツールです。'
+      },
+      {
+        question: 'HTMLでリンクを作るタグはどれ？',
+        choices: ['<link>', '<a>', '<url>', '<href>'],
+        answer: '<a>',
+        explanation: '<a href="URL">テキスト</a> でリンクを作ります。href属性にリンク先URLを指定します。'
+      },
+      {
+        question: 'CSSでボックスの外側の余白を指定するプロパティは？',
+        choices: ['padding', 'spacing', 'margin', 'border'],
+        answer: 'margin',
+        explanation: 'margin は要素の外側の余白、padding は内側の余白です。この違いはCSSの基本なのでしっかり覚えよう！'
+      },
+      {
+        question: 'JavaScriptで配列の末尾に要素を追加するメソッドは？',
+        choices: ['add()', 'append()', 'push()', 'insert()'],
+        answer: 'push()',
+        explanation: 'array.push(値) で配列の末尾に要素を追加できます。逆に pop() は末尾の要素を取り出します。'
+      },
+      {
+        question: 'HTTPとHTTPSの違いで正しいのは？',
+        choices: [
+          'HTTPSの方が表示が速い',
+          'HTTPSは通信が暗号化されている',
+          'どちらも同じで違いはない',
+          'HTTPは画像が使える'
+        ],
+        answer: 'HTTPSは通信が暗号化されている',
+        explanation: 'HTTPSはSSL/TLSで通信を暗号化します。個人情報やパスワードを扱うサイトでは必須です。URLの鍵マークで確認できます。'
+      }
+    ];
+
+    // ============================================================
+    //  【学習ポイント②】変数でゲームの状態を管理
+    // ============================================================
+    let currentIndex = 0;  // 現在の問題番号
+    let score = 0;          // 正解数
+    let answered = false;   // この問題を回答済みか
+
+    // シャッフルされた問題リスト（後で作成）
+    let shuffledQuestions = [];
+
+    // ============================================================
+    //  【学習ポイント③】配列のシャッフル
+    //  Math.random() - 0.5 で正・負のランダムな値を作り sort() に渡す
+    // ============================================================
+    function shuffle(arr) {
+      return [...arr].sort(() => Math.random() - 0.5);
+    }
+
+    // DOM要素の取得
+    const questionText  = document.getElementById('question-text');
+    const choicesEl     = document.getElementById('choices');
+    const explanation   = document.getElementById('explanation');
+    const nextBtn       = document.getElementById('next-btn');
+    const questionNum   = document.getElementById('question-num');
+    const scoreDisplay  = document.getElementById('score-display');
+    const progressFill  = document.getElementById('progress-fill');
+    const quizScreen    = document.getElementById('quiz-screen');
+    const resultScreen  = document.getElementById('result-screen');
+
+    // ============================================================
+    //  【学習ポイント④】問題を表示する関数
+    // ============================================================
+    function showQuestion() {
+      answered = false;
+      explanation.classList.remove('show');
+      nextBtn.classList.remove('show');
+
+      const q = shuffledQuestions[currentIndex];
+
+      // ヘッダー更新
+      questionNum.textContent = `問題 ${currentIndex + 1} / ${shuffledQuestions.length}`;
+      scoreDisplay.textContent = `スコア: ${score}`;
+
+      // プログレスバー更新
+      const progress = (currentIndex / shuffledQuestions.length) * 100;
+      progressFill.style.width = progress + '%';
+
+      // 問題文を表示
+      questionText.textContent = q.question;
+
+      // 選択肢をシャッフルして表示
+      choicesEl.innerHTML = '';
+      shuffle(q.choices).forEach(choice => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.textContent = choice;
+        btn.addEventListener('click', () => selectAnswer(choice, q));
+        choicesEl.appendChild(btn);
+      });
+    }
+
+    // ============================================================
+    //  【学習ポイント⑤】回答を選んだときの処理
+    //  条件分岐（if/else）でスコアを更新
+    // ============================================================
+    function selectAnswer(selected, q) {
+      if (answered) return; // 二重回答を防止
+      answered = true;
+
+      const isCorrect = selected === q.answer;
+
+      // すべてのボタンを無効化して色付け
+      choicesEl.querySelectorAll('.choice-btn').forEach(btn => {
+        btn.disabled = true;
+        if (btn.textContent === q.answer) {
+          btn.classList.add('correct'); // 正解を緑に
+        } else if (btn.textContent === selected && !isCorrect) {
+          btn.classList.add('wrong');   // 選んだ不正解を赤に
+        }
+      });
+
+      // 正解なら+1
+      if (isCorrect) score++;
+
+      // 解説を表示
+      explanation.textContent = '💡 ' + q.explanation;
+      explanation.classList.add('show');
+
+      // 次へボタンを表示
+      nextBtn.textContent = currentIndex < shuffledQuestions.length - 1
+        ? '次の問題へ →'
+        : '結果を見る 🎉';
+      nextBtn.classList.add('show');
+    }
+
+    // 次の問題へ
+    nextBtn.addEventListener('click', () => {
+      currentIndex++;
+      if (currentIndex < shuffledQuestions.length) {
+        showQuestion();
+      } else {
+        showResult();
+      }
+    });
+
+    // ============================================================
+    //  【学習ポイント⑥】結果画面の表示
+    //  テンプレートリテラル（`${}`) で文字列に変数を埋め込む
+    // ============================================================
+    function showResult() {
+      quizScreen.style.display = 'none';
+      resultScreen.classList.add('show');
+
+      const ratio = score / shuffledQuestions.length;
+      let emoji, title;
+
+      // スコアによってメッセージを変える
+      if (ratio >= 0.9)      { emoji = '🏆'; title = '素晴らしい！完璧です！'; }
+      else if (ratio >= 0.7) { emoji = '🎉'; title = 'よくできました！'; }
+      else if (ratio >= 0.5) { emoji = '😊'; title = 'もう少しで合格！'; }
+      else                   { emoji = '📚'; title = '復習して再挑戦しよう！'; }
+
+      document.getElementById('result-emoji').textContent = emoji;
+      document.getElementById('result-title').textContent = title;
+      document.getElementById('score-big').textContent = score;
+
+      // バーグラフ
+      const barsEl = document.getElementById('result-bars');
+      barsEl.innerHTML = `
+        <div class="result-bar-item">
+          <span>正解率: ${Math.round(ratio * 100)}%</span>
+          <div class="bar-track"><div class="bar-fill" style="width: 0%" data-width="${ratio * 100}"></div></div>
+        </div>
+      `;
+
+      // アニメーション（少し遅らせてバーを伸ばす）
+      setTimeout(() => {
+        document.querySelectorAll('.bar-fill').forEach(el => {
+          el.style.width = el.dataset.width + '%';
+        });
+      }, 100);
+    }
+
+    // リトライ
+    document.getElementById('retry-btn').addEventListener('click', () => {
+      currentIndex = 0;
+      score = 0;
+      shuffledQuestions = shuffle(questions);
+      resultScreen.classList.remove('show');
+      quizScreen.style.display = 'block';
+      showQuestion();
+    });
+
+    // ゲームスタート
+    shuffledQuestions = shuffle(questions);
+    showQuestion();
+  </script>
+</body>
+</html>

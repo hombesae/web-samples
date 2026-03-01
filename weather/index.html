@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>天気アプリ</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(160deg, #0d1b2a 0%, #1b2838 50%, #0a3d62 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px;
+      color: #fff;
+    }
+
+    .back-link {
+      align-self: flex-start;
+      margin-bottom: 20px;
+      text-decoration: none;
+      color: #a0aec0;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.2s;
+      max-width: 500px;
+      width: 100%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .back-link:hover { color: #fff; }
+
+    .container {
+      width: 100%;
+      max-width: 500px;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      text-align: center;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #a0aec0;
+      font-size: 0.9rem;
+      margin-bottom: 28px;
+    }
+
+    /* 検索バー */
+    .search-area {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .search-area input {
+      flex: 1;
+      padding: 13px 18px;
+      background: rgba(255,255,255,0.08);
+      border: 2px solid rgba(255,255,255,0.15);
+      border-radius: 14px;
+      color: #fff;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-area input::placeholder { color: #718096; }
+    .search-area input:focus { border-color: #68d391; }
+
+    .search-btn {
+      padding: 13px 20px;
+      background: #68d391;
+      color: #0d1b2a;
+      border: none;
+      border-radius: 14px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      white-space: nowrap;
+    }
+
+    .search-btn:hover { background: #48bb78; }
+    .search-btn:active { transform: scale(0.97); }
+    .search-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* クイック都市ボタン */
+    .quick-cities {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    .city-chip {
+      padding: 6px 14px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 20px;
+      color: #cbd5e0;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .city-chip:hover {
+      background: rgba(104, 211, 145, 0.2);
+      border-color: #68d391;
+      color: #68d391;
+    }
+
+    /* ロード中 */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #a0aec0;
+      display: none;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(255,255,255,0.1);
+      border-top-color: #68d391;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 12px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* エラー */
+    .error-msg {
+      background: rgba(233, 69, 96, 0.15);
+      border: 1px solid rgba(233, 69, 96, 0.4);
+      border-radius: 14px;
+      padding: 16px 20px;
+      color: #fc8181;
+      text-align: center;
+      display: none;
+      margin-bottom: 20px;
+    }
+
+    /* 天気カード */
+    .weather-card {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 24px;
+      padding: 36px 32px;
+      text-align: center;
+      display: none;
+      animation: fadeUp 0.4s ease;
+      margin-bottom: 20px;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .city-name { font-size: 1.6rem; font-weight: 700; margin-bottom: 4px; }
+    .weather-date { font-size: 0.85rem; color: #a0aec0; margin-bottom: 24px; }
+    .weather-icon { font-size: 5rem; margin-bottom: 12px; line-height: 1; }
+    .weather-desc { font-size: 1.1rem; color: #e2e8f0; margin-bottom: 24px; }
+
+    .temp-main { font-size: 4rem; font-weight: 800; color: #68d391; }
+    .temp-unit { font-size: 2rem; color: #a0aec0; }
+
+    .weather-details {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    .detail-item {
+      background: rgba(255,255,255,0.05);
+      border-radius: 14px;
+      padding: 14px 10px;
+    }
+
+    .detail-label { font-size: 0.75rem; color: #718096; margin-bottom: 6px; }
+    .detail-value { font-size: 1.05rem; font-weight: 600; color: #e2e8f0; }
+
+    /* 学習ポイント */
+    .learn-box {
+      background: rgba(104, 211, 145, 0.08);
+      border-left: 4px solid #68d391;
+      border-radius: 0 14px 14px 0;
+      padding: 14px 16px;
+      font-size: 0.85rem;
+      color: #9ae6b4;
+      line-height: 1.7;
+    }
+    .learn-box strong { display: block; margin-bottom: 6px; color: #68d391; }
+  </style>
+</head>
+<body>
+
+  <a class="back-link" href="../index.html">← サンプル一覧に戻る</a>
+
+  <div class="container">
+    <h1>🌤️ 天気アプリ</h1>
+    <p class="subtitle">都市名を入力して現在の天気を調べよう</p>
+
+    <!-- 検索バー -->
+    <div class="search-area">
+      <input type="text" id="city-input" placeholder="都市名を入力（例: Tokyo）" >
+      <button class="search-btn" id="search-btn">検索</button>
+    </div>
+
+    <!-- クイック選択 -->
+    <div class="quick-cities">
+      <button class="city-chip" data-city="Tokyo">🗼 東京</button>
+      <button class="city-chip" data-city="Osaka">🏯 大阪</button>
+      <button class="city-chip" data-city="Sapporo">⛷️ 札幌</button>
+      <button class="city-chip" data-city="Fukuoka">🌸 福岡</button>
+      <button class="city-chip" data-city="New York">🗽 NY</button>
+      <button class="city-chip" data-city="London">🎡 London</button>
+    </div>
+
+    <!-- ローディング -->
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <p>天気データを取得中...</p>
+    </div>
+
+    <!-- エラーメッセージ -->
+    <div class="error-msg" id="error-msg"></div>
+
+    <!-- 天気カード -->
+    <div class="weather-card" id="weather-card">
+      <div class="city-name" id="city-name"></div>
+      <div class="weather-date" id="weather-date"></div>
+      <div class="weather-icon" id="weather-icon"></div>
+      <div class="weather-desc" id="weather-desc"></div>
+      <div>
+        <span class="temp-main" id="temp-main"></span>
+        <span class="temp-unit">°C</span>
+      </div>
+      <div class="weather-details">
+        <div class="detail-item">
+          <div class="detail-label">💨 風速</div>
+          <div class="detail-value" id="wind-speed"></div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">🌡️ 体感</div>
+          <div class="detail-value" id="feels-like"></div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">🧭 風向</div>
+          <div class="detail-value" id="wind-dir"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 学習ポイント -->
+    <div class="learn-box">
+      <strong>📚 このアプリで学べること</strong>
+      ・<code>fetch(URL)</code> で外部APIからデータを取得<br>
+      ・<code>async / await</code> で非同期処理を書きやすく<br>
+      ・<code>try / catch</code> でエラーを適切に処理<br>
+      ・取得したJSONデータから必要な値を取り出す方法
+    </div>
+  </div>
+
+  <script>
+    // ============================================================
+    //  【学習ポイント①】APIとは？
+    //  Application Programming Interface の略。
+    //  外部サービスのデータをURLでリクエストして取得できる仕組み。
+    //  このアプリでは Open-Meteo（無料・APIキー不要）を使用。
+    // ============================================================
+
+    const GEOCODE_URL = 'https://geocoding-api.open-meteo.com/v1/search';
+    const WEATHER_URL = 'https://api.open-meteo.com/v1/forecast';
+
+    // DOM要素
+    const cityInput   = document.getElementById('city-input');
+    const searchBtn   = document.getElementById('search-btn');
+    const loading     = document.getElementById('loading');
+    const errorMsg    = document.getElementById('error-msg');
+    const weatherCard = document.getElementById('weather-card');
+
+    // ============================================================
+    //  【学習ポイント②】天気コードをアイコンと説明に変換
+    //  オブジェクトをマップ（辞書）として使う
+    // ============================================================
+    const weatherCodes = {
+      0:  { icon: '☀️',  desc: '快晴' },
+      1:  { icon: '🌤️', desc: 'ほぼ晴れ' },
+      2:  { icon: '⛅',  desc: '一部曇り' },
+      3:  { icon: '☁️',  desc: '曇り' },
+      45: { icon: '🌫️', desc: '霧' },
+      48: { icon: '🌫️', desc: '霧氷' },
+      51: { icon: '🌦️', desc: '小雨（霧雨）' },
+      53: { icon: '🌦️', desc: '霧雨' },
+      55: { icon: '🌧️', desc: '強い霧雨' },
+      61: { icon: '🌧️', desc: '小雨' },
+      63: { icon: '🌧️', desc: '雨' },
+      65: { icon: '🌧️', desc: '強い雨' },
+      71: { icon: '🌨️', desc: '小雪' },
+      73: { icon: '❄️',  desc: '雪' },
+      75: { icon: '❄️',  desc: '大雪' },
+      80: { icon: '🌦️', desc: 'にわか雨' },
+      81: { icon: '🌧️', desc: '雨' },
+      82: { icon: '⛈️',  desc: '激しい雨' },
+      95: { icon: '⛈️',  desc: '雷雨' },
+      96: { icon: '⛈️',  desc: 'ひょうを伴う雷雨' },
+    };
+
+    // 風向きを度数から方角に変換
+    function degToDirection(deg) {
+      const dirs = ['北', '北北東', '北東', '東北東', '東', '東南東', '南東', '南南東',
+                    '南', '南南西', '南西', '西南西', '西', '西北西', '北西', '北北西'];
+      return dirs[Math.round(deg / 22.5) % 16];
+    }
+
+    // ============================================================
+    //  【学習ポイント③】UI状態の切り替え関数
+    //  表示/非表示をまとめて管理することでコードを整理
+    // ============================================================
+    function showLoading() {
+      loading.style.display = 'block';
+      weatherCard.style.display = 'none';
+      errorMsg.style.display = 'none';
+    }
+
+    function showError(msg) {
+      loading.style.display = 'none';
+      weatherCard.style.display = 'none';
+      errorMsg.style.display = 'block';
+      errorMsg.textContent = msg;
+    }
+
+    function showWeather() {
+      loading.style.display = 'none';
+      errorMsg.style.display = 'none';
+      weatherCard.style.display = 'block';
+    }
+
+    // ============================================================
+    //  【学習ポイント④】async / await で非同期処理
+    //
+    //  fetch() はデータ取得が終わるまで待機が必要（非同期）。
+    //  async 関数の中で await を使うと、取得完了まで処理を止められる。
+    //  try/catch でネットワークエラーなどを安全にキャッチ。
+    // ============================================================
+    async function getWeather(cityName) {
+      showLoading();
+      searchBtn.disabled = true;
+
+      try {
+        // ① 都市名を緯度・経度に変換（ジオコーディング）
+        const geoRes = await fetch(
+          `${GEOCODE_URL}?name=${encodeURIComponent(cityName)}&count=1&language=ja&format=json`
+        );
+
+        // レスポンスをJSONに変換
+        const geoData = await geoRes.json();
+
+        // 都市が見つからない場合
+        if (!geoData.results || geoData.results.length === 0) {
+          showError(`「${cityName}」が見つかりませんでした。英語で入力してみてください。`);
+          return;
+        }
+
+        const { latitude, longitude, name, country } = geoData.results[0];
+
+        // ② 緯度・経度から天気データを取得
+        const params = new URLSearchParams({
+          latitude,
+          longitude,
+          current_weather: true,
+          hourly: 'apparent_temperature',
+          timezone: 'auto',
+          forecast_days: 1
+        });
+
+        const weatherRes = await fetch(`${WEATHER_URL}?${params}`);
+        const weatherData = await weatherRes.json();
+
+        const cw = weatherData.current_weather;
+        const apparentTemp = weatherData.hourly?.apparent_temperature?.[0];
+
+        // ③ 取得したデータをDOMに反映
+        const weather = weatherCodes[cw.weathercode] || { icon: '🌡️', desc: '不明' };
+
+        document.getElementById('city-name').textContent = `${name}（${country}）`;
+        document.getElementById('weather-date').textContent =
+          new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+        document.getElementById('weather-icon').textContent = weather.icon;
+        document.getElementById('weather-desc').textContent = weather.desc;
+        document.getElementById('temp-main').textContent = Math.round(cw.temperature);
+        document.getElementById('wind-speed').textContent = `${cw.windspeed} km/h`;
+        document.getElementById('feels-like').textContent =
+          apparentTemp !== undefined ? `${Math.round(apparentTemp)}°C` : '--';
+        document.getElementById('wind-dir').textContent = degToDirection(cw.winddirection);
+
+        showWeather();
+
+      } catch (err) {
+        // ネットワークエラーなど予期しないエラーをキャッチ
+        console.error(err); // 開発者ツールのコンソールで確認できる
+        showError('データの取得に失敗しました。インターネット接続を確認してください。');
+      } finally {
+        // finally は成功・失敗どちらでも必ず実行される
+        searchBtn.disabled = false;
+      }
+    }
+
+    // ============================================================
+    //  【学習ポイント⑤】イベントリスナーの設定
+    // ============================================================
+    searchBtn.addEventListener('click', () => {
+      const city = cityInput.value.trim();
+      if (city) getWeather(city);
+    });
+
+    cityInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const city = cityInput.value.trim();
+        if (city) getWeather(city);
+      }
+    });
+
+    // ク���ック都市ボタン
+    document.querySelectorAll('.city-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const city = chip.dataset.city;
+        cityInput.value = city;
+        getWeather(city);
+      });
+    });
+
+    // デフォルトで東京の天気を表示
+    getWeather('Tokyo');
+  </script>
+</body>
+</html>

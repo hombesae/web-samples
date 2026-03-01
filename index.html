@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web学習サンプル集</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      color: #fff;
+      padding: 40px 20px;
+    }
+
+    header { text-align: center; margin-bottom: 60px; }
+
+    header h1 {
+      font-size: 2.8rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #e94560, #a78bfa, #68d391);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 16px;
+    }
+
+    header p { font-size: 1.1rem; color: #a0aec0; max-width: 600px; margin: 0 auto; line-height: 1.7; }
+
+    .badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      margin-bottom: 12px;
+      color: #81e6d9;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 28px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 32px 28px 60px;
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--accent, #e94560);
+      border-radius: 20px 20px 0 0;
+    }
+
+    .card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+      border-color: rgba(255,255,255,0.25);
+    }
+
+    .card-icon { font-size: 3rem; margin-bottom: 18px; display: block; }
+    .card h2 { font-size: 1.5rem; font-weight: 600; margin-bottom: 10px; }
+    .card .desc { font-size: 0.95rem; color: #a0aec0; line-height: 1.7; margin-bottom: 20px; }
+
+    .tags { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tag {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.78rem;
+      color: #81e6d9;
+    }
+
+    .card-arrow {
+      position: absolute;
+      bottom: 24px; right: 24px;
+      width: 36px; height: 36px;
+      background: var(--accent, #e94560);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+      transition: transform 0.3s;
+    }
+
+    .card:hover .card-arrow { transform: translateX(4px); }
+
+    .card:nth-child(1) { --accent: #e94560; }
+    .card:nth-child(2) { --accent: #f6ad55; }
+    .card:nth-child(3) { --accent: #68d391; }
+    .card:nth-child(4) { --accent: #76e4f7; }
+
+    footer { text-align: center; margin-top: 60px; color: #4a5568; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="badge">🎓 初心者向け学習サンプル</div>
+    <h1>Web学習サンプル集</h1>
+    <p>HTML / CSS / JavaScript の基礎を実際に動くアプリで学ぼう。<br>
+       各アプリのコードにはわかりやすいコメントがついています。</p>
+  </header>
+
+  <div class="grid">
+    <a class="card" href="todo/index.html">
+      <span class="card-icon">✅</span>
+      <h2>Todoリスト</h2>
+      <p class="desc">タスクの追加・完了・削除ができるシンプルなToDoアプリ。DOMの操作方法やローカルストレージへのデータ保存を学べます。</p>
+      <div class="tags">
+        <span class="tag">DOM操作</span>
+        <span class="tag">localStorage</span>
+        <span class="tag">イベント処理</span>
+      </div>
+      <div class="card-arrow">→</div>
+    </a>
+
+    <a class="card" href="quiz/index.html">
+      <span class="card-icon">🧠</span>
+      <h2>クイズゲーム</h2>
+      <p class="desc">Web開発の知識を試せる4択クイズ。配列やオブジェクトの使い方、条件分岐、スコア管理を学べます。</p>
+      <div class="tags">
+        <span class="tag">配列・オブジェクト</span>
+        <span class="tag">条件分岐</span>
+        <span class="tag">スコア管理</span>
+      </div>
+      <div class="card-arrow">→</div>
+    </a>
+
+    <a class="card" href="weather/index.html">
+      <span class="card-icon">🌤️</span>
+      <h2>天気アプリ</h2>
+      <p class="desc">都市名で現在の天気を検索するアプリ。fetchを使った外部API連携と非同期処理（async/await）を学べます。</p>
+      <div class="tags">
+        <span class="tag">Fetch API</span>
+        <span class="tag">async/await</span>
+        <span class="tag">JSON解析</span>
+      </div>
+      <div class="card-arrow">→</div>
+    </a>
+
+    <a class="card" href="draw/index.html">
+      <span class="card-icon">🎨</span>
+      <h2>お絵かきボード</h2>
+      <p class="desc">マウスで自由に描けるお絵かきアプリ。Canvas APIとマウス/タッチイベントの使い方を学べます。</p>
+      <div class="tags">
+        <span class="tag">Canvas API</span>
+        <span class="tag">マウスイベント</span>
+        <span class="tag">タッチ対応</span>
+      </div>
+      <div class="card-arrow">→</div>
+    </a>
+  </div>
+
+  <footer>
+    <p>各アプリのソースコードをブラウザのデベロッパーツールで確認しながら学習しよう</p>
+  </footer>
+</body>
+</html>
